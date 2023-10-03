@@ -1,0 +1,15 @@
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteBase /
+
+    # If the requested filename exists, serve it
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteRule ^ - [L]
+
+    # Exclude paths starting with /api
+    RewriteCond %{REQUEST_URI} !^/api
+
+    # Redirect everything else to index.php
+    RewriteRule ^ index.php [L]
+</IfModule>
