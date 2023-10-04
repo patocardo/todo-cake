@@ -11,27 +11,17 @@
       <div class="task-col-8" @click="displayViewTask(task.id)">
         {{ task.name }}
       </div>
-      <Spinner :loading="loading" />
+      <Spinner v-if="loading" :loading="true" />
       <div class="task-col-3 task-actions">
           <button class="icon-btn" @click="displayDeleteConfirm(task.id)">🗑</button>
           <button class="icon-btn" @click="displayAddTask(task.id)">⨢📋</button>
           <button class="icon-btn" @click="displayEditTask(task.id)">✎</button>
-          <!--<button class="icon-btn" @click="task.completed ? setNotCompleted : setCompleted" title="{{ task.completed ? 'Set the task as not completed' : 'Set the task as completed' }}">
-              {{ task.completed ? '⸦◉' : '◉⸧' }}
-          </button>-->
-
-          <SwitchControl
-            :value="task.completed"
-            @click="task.completed ? setNotCompleted : setCompleted"
-            stringOn="Completed"
-            stringOff="To do"
-          /> 
+          <SwitchUI @click="toggleCompleted()" :active="task.completed" />
           <button class="icon-btn" @click="toggleTaskFold(task.id)">
               {{ task.folded ? '⏷' : '⏶' }}
           </button>
       </div>
     </div>
-
     <div v-if="!task.folded" class="margin">
       <TaskItem
           v-for="subtask in task.children"
@@ -44,14 +34,14 @@
 
 <script>
   import { onUnmounted, inject } from 'vue';
-  import SwitchControl from './SwitchControl.vue';
+  import SwitchUI from './SwitchUI.vue';
   import Spinner from './Spinner.vue';
   
   export default {
     name: 'TaskItem',
     components: {
-      SwitchControl, Spinner,
-    },
+    Spinner, SwitchUI,
+},
     props: {
       task: {
         type: Object,
@@ -72,12 +62,12 @@
         updateTask,
       } = inject('tasks');
 
-      const setCompleted = () => {
+      const toggleCompleted = () => {
+        if(props.task.completed) {
+          updateTask({...props.task, completed: false});
+          return;
+        }
         displayCompletedConfirm(props.task.id);
-      }
-
-      const setNotCompleted = () => {
-        updateTask({...props.task, completed: true});
       }
   
       onUnmounted(() => {
@@ -95,8 +85,7 @@
         displayDeleteConfirm,
         displayCompletedConfirm,
         loading,
-        setCompleted,
-        setNotCompleted,
+        toggleCompleted,
       };
     }
   };
@@ -137,6 +126,7 @@
     font-size: 1.2rem;
     padding: 0.5rem;
     transition: background-color 0.3s;
+    text-wrap: nowrap;
   }
   
   .icon-btn:hover {
@@ -156,5 +146,6 @@
   .margin {
     margin-left: 2rem;
   }
+
   </style>
   

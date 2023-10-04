@@ -14,8 +14,8 @@
       <label for="taskStatusFilter">✔:</label>
       <select v-model="completion" id="taskStatusFilter" aria-label="Filter tasks by status">
           <option :value="null">All</option>
-          <option :value="true">Completed</option>
-          <option :value="false">Uncompleted</option>
+          <option :value="1">Completed</option>
+          <option :value="0">Uncompleted</option>
       </select>
 
       <!-- Filter Button -->
@@ -119,7 +119,7 @@ export default {
     const applyFilter = () => {
       if(props.parentId) return null; // filtering only applied to root level.
       fetchTasks({
-        search,
+        search: search.value,
         parentId: null,
         ...(completion.value !== null ? { completed: completion.value } : {}),
         // new filter condition will refresh the list
@@ -150,5 +150,8 @@ export default {
     border-radius: 8px;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     max-width: 450px;
+  }
+  .small {
+    font-size: small;
   }
 </style>
