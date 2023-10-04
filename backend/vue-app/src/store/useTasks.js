@@ -31,7 +31,7 @@ function findDescendants(taskId, tree) {
     return descendants;
 }
 
-function getBaseTask(parentId) {
+function getBaseTask(parentId = null) {
     return {...{
         parent_id: parentId,
         name: '',
@@ -53,7 +53,7 @@ export default function useTasks(handleError, displayConfirmation) {
     const tasks = ref([]);
     const currentTask = ref(getBaseTask(null));
     const loading = ref(false);
-    const displayPanel = ref(''); // 'view'|'edit'|'add'
+    const displayPanel = ref('none'); // 'view'|'edit'|'add'
 
     // internal functions
     
@@ -145,12 +145,13 @@ export default function useTasks(handleError, displayConfirmation) {
         loading.value = true;
         let data = null;
         try {
-            displayPanel.value = 'view';
+            const prevTask = tasks.value.find(({id}) => id === taskId) || getBaseTask();
             const response = await axios.get(`${TASKS_ENDPOINT}/${taskId}.json`);
             if(response.error) throw new Error(response.error);
             if(!response.data?.task) throw new Error('Bad response form');
-            mergeTasks([response.data.task]);
-            data = response.data.task;
+            const fetchedTask = {...prevTask, ...response.data.task}
+            mergeTasks([fetchedTask]);
+            data = fetchedTask;
         } catch(error) {
             handleError(error, 'Failed to fetch more tasks.');
         } finally {
@@ -179,11 +180,12 @@ export default function useTasks(handleError, displayConfirmation) {
             });
             if(response.error) throw new Error(response.error);
             if(!Array.isArray(response.data?.tasks)) throw new Error('Bad data format');
+            const uiTasks = response.data.tasks.map(( task ) => ({...getBaseTask(), ...task}));
             // if it is a new search, refresh the list
             if(!parentId && page === 1) {
-                tasks.value = response.data.tasks;
+                tasks.value = uiTasks;
             } else {
-                mergeTasks(response.data.tasks);
+                mergeTasks(uiTasks);
             }
             success = true;
         } catch (error) {
@@ -200,7 +202,10 @@ export default function useTasks(handleError, displayConfirmation) {
      * @returns {Promise<boolean>} 
      */
     const toggleTaskFold = async (taskId) => {
-        const task = tasks.value.find((task) => (task.id !== taskId));
+        const task = tasks.value.find((task) => (task.id === taskId));
+        if(!task) {
+            return;
+        }
         if(task.folded) {
             mergeTasks([{...task, folded: !task.folded}]);
             return true;
@@ -237,8 +242,9 @@ export default function useTasks(handleError, displayConfirmation) {
             });
             if(response.error) throw new Error(response.error);
             if(!response.data?.task) throw new Error('Bad response form');
-            tasks.value.push(response.data.task);
-            newId = response.data.task.id;
+            const parsedTask = {...getBaseTask(), ...response.data.task};
+            tasks.value.push(parsedTask);
+            newId = parsedTask.id;
         } catch (error) {
             handleError(error, 'Error adding task.');
         } finally {
@@ -260,7 +266,15 @@ export default function useTasks(handleError, displayConfirmation) {
             for (const key in taskData) {
                 formData.append(key, taskData[key]);
             }
-            const response = await axios.put(`${TASKS_ENDPOINT}/${taskData.id}`, formData);
+            const response = await axios.put(
+                `${TASKS_ENDPOINT}/${taskData.id}.json`,
+                formData,
+                {
+                    headers: {
+                        'Content-Type': 'multipart/form-data'
+                    }
+                }
+            );
             if(response.error) throw new Error(response.error);
             mergeTasks([taskData]);
         } catch (error) {
@@ -303,7 +317,7 @@ export default function useTasks(handleError, displayConfirmation) {
         loading.value = false;
         let success = false;
         try {
-            const response = await axios.patch(`${TASKS_ENDPOINT}`, {
+            const response = await axios.patch(`${TASKS_ENDPOINT}/1.json`, {
                 action: 'complete',
                 tasksIds,
             });

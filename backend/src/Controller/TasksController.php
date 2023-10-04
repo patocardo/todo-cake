@@ -68,10 +68,12 @@ class TasksController extends AppController
     
         // Filter by completed status
         $completedStatus = $this->request->getQuery('completed');
-        if ($completedStatus === 'true' || $completedStatus === '1') {
+        if ($completedStatus === '1') {
             $query->where(['completed' => true]);
-        } elseif ($completedStatus === 'false' || $completedStatus === '0') {
+        } elseif ($completedStatus === '0') {
             $query->where(['completed' => false]);
+        } else {
+            Log::write('debug', 'completed:' . $completedStatus);
         }
     
         // Filter by parentId
@@ -244,7 +246,7 @@ class TasksController extends AppController
                     break;
                 case 'complete':
                     if(    $this->Tasks->updateAll(
-                        ['completed' => $newStatus], // Fields to update
+                        ['completed' => true], // Fields to update
                         ['Tasks.id IN' => $tasksIds]  // Condition to match
                     )) {
                         $done = $tasksIds;

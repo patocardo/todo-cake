@@ -19,8 +19,8 @@
     border: 8px solid #f3f3f3;
     border-top: 8px solid #3498db;
     border-radius: 50%;
-    width: 50px;
-    height: 50px;
+    width: 20px;
+    height: 20px;
     animation: spin 2s linear infinite;
   }
   
